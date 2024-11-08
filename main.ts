@@ -43,9 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
     } else if (path === "/user") {
       const name = url.searchParams.get("name");
       if (!name) return new Response("Bad request", { status: 400 });
-      const userDB = await UserCollection.findOne({
-        name: name,
-      });
+      const userDB = await UserCollection.findOne({name: name,});
       if (!userDB) return new Response("User not found", { status: 404 });
       const user = await fromModelToUser(userDB, BookCollection);
       return new Response(JSON.stringify(user));
@@ -61,9 +59,9 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(JSON.stringify(books));
       }
     } else if (path === "/book") {
-      const id = url.searchParams.get("id");
-      if (!id) return new Response("Bad Request", { status: 400 });
-      const bookDB = await BookCollection.findOne({ id });
+      const title = url.searchParams.get("title");
+      if (!title) return new Response("Bad Request", { status: 400 });
+      const bookDB = await BookCollection.findOne({ title });
       if (!bookDB) return new Response("Book not found", { status: 404 });
       const book = fromModelToBook(bookDB);
       return new Response(JSON.stringify(book));
@@ -129,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
       if (user.books) {
         const books = await BookCollection.find({
-          _id: { $in: user.book.map((id: string) => new ObjectId(id)) },
+          _id: { $in: user.books.map((id: string) => new ObjectId(id)) }
         }).toArray();
         if (books.length !== user.books.length) {
           return new Response("Book not found", { status: 404 });
@@ -137,7 +135,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const { modifiedCount } = await UserCollection.updateOne(
-        { email: user.email },
+        { _id: new ObjectId(user.id as string) },
         {
           $set: {
             name: user.name,
